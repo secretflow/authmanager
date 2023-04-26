@@ -1,0 +1,35 @@
+# Copyright 2023 Ant Group Co., Ltd.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+port: 8835
+
+log_config:
+  log_file_name: /host/logs/auth_manager.log
+  monitor_log_file_name: /host/logs/monitor.log
+  log_level: debug
+  enable_console_logger: true
+  log_window_size: 1024
+  log_size_limit: 16
+
+remote_storage_client_config:
+  remote_storage_endpoint: localhost:8341
+
+scheme: "RSA"
+secret_shard_id: 0
+storage_backend: "inmemory"
+secret_key_from: "standalone"
+server_cert_path: "/host/resources/cert/server.crt"
+server_cert_key_path: "/host/resources/cert/server.key"
+client_ca_cert_path: "/host/resources/ca/my_ca.crt"
+enable_tls: true

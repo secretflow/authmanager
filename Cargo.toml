@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "auth-manager",
+    "auth-manager-tonic",
+	"auth-types",
+	"second_party/unified_attestation"
+]

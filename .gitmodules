@@ -1,0 +1,8 @@
+[submodule "second_party/apis"]
+	path = second_party/apis
+	url = https://github.com/secretflow/secure-data-capsule-sdk.git
+	branch = master
+[submodule "second_party/unified-attestation"]
+	path = second_party/unified-attestation
+	url = https://github.com/secretflow/jinzhao-attest.git
+	branch = bazel_build
