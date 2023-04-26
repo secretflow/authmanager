@@ -1,0 +1,8 @@
+target
+Cargo.lock
+occlum_release
+auth-target
+.vscode
+auth-manager/resources/ca
+auth-manager/resources/cert
+auth-manager/resources/client_ca

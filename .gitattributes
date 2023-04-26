@@ -1,0 +1,12 @@
+second_party/unified_attestation/c/lib/libgcc_s.so.1 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libprotobuf.so filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libprotobuf.so.18.0.1 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libssl.so.1.1 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libcrypto.so.1.1 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libdl.so.2 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libua_ugeneration.so filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libua_unetwork.so filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libua_uverification.so filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libcurl.so.4 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libprotobuf.so.18 filter=lfs diff=lfs merge=lfs -text
+second_party/unified_attestation/c/lib/libaecsclient.so filter=lfs diff=lfs merge=lfs -text
