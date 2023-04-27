@@ -711,6 +711,7 @@ impl AuthManagerImpl {
                 partition_id_infos.push(PartitionIdInfo {
                     data_uuid: input.data_uuid.clone(),
                     partition_id: input.partition_id.clone(),
+                    partition_expr: "".to_owned(),
                 });
             }
         }
@@ -853,6 +854,7 @@ impl AuthManagerImpl {
                 public_key: self.kek_pub.clone(),
             }),
             input_metas: input_metas,
+            all_ancestors: vec![],
         };
 
         let digital_envelope = encrypter.seal_digital_envelope(&compute_meta.encode_to_vec())?;

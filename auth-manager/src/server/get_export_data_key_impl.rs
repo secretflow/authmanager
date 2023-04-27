@@ -39,6 +39,7 @@ impl AuthManagerImpl {
             partition_id_infos: vec![PartitionIdInfo {
                 data_uuid: request.data_uuid.clone(),
                 partition_id: request.partition_id.clone(),
+                partition_expr: "".to_owned(),
             }],
         };
 
