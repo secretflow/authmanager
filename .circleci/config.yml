@@ -43,7 +43,7 @@ jobs:
             git submodule update --remote
             cd second_party/unified-attestation/
             git submodule init
-            git submodule update --init
+            git submodule update --init --recursive
             git submodule update --remote --recursive
             bazel build //:libgeneration.so
             bazel build //:libverification.so
@@ -75,7 +75,7 @@ jobs:
             git submodule update --remote
             cd second_party/unified-attestation/
             git submodule init
-            git submodule update --init
+            git submodule update --init --recursive
             git submodule update --remote --recursive
             bazel build //:libgeneration.so
             bazel build //:libverification.so
