@@ -24,6 +24,7 @@ jobs:
     docker:
       - image: registry.hub.docker.com/secretflow/ubuntu-base-ci:0.3
     resource_class: 2xlarge+
+    shell: /bin/bash --login -eo pipefail
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
