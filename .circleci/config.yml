@@ -34,40 +34,8 @@ jobs:
             set -ex
             curl https://sh.rustup.rs -sSf | bash -s -- -y
             source "$HOME/.cargo/env"
-						apt update && apt upgrade -y
-						apt install -y protobuf-compiler libprotobuf-dev
-      - run:
-          name: "build and test"
-          command: |
-            set -ex
-            git submodule init
-            git submodule update --init
-            git submodule update --remote
-            cd second_party/unified-attestation/
-            git submodule init
-            git submodule update --init --recursive
-            git submodule update --remote --recursive
-            bazel build //:libgeneration.so
-            bazel build //:libverification.so
-            cd ../..
-            mkdir -p second_party/unified_attestation/c/lib/
-            cp second_party/unified-attestation/bazel-bin/libgeneration.so second_party/unified_attestation/c/lib/
-            cp second_party/unified-attestation/bazel-bin/libverification.so second_party/unified_attestation/c/lib/
-            cargo test
-  macos_ut:
-    macos:
-      xcode: 14.2
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-    resource_class: macos.m1.large.gen1
-    steps:
-      - checkout
-      - run:
-          name: "Install homebrew dependencies"
-          command: |
-            brew install bazel cmake ninja libomp wget protobuf
-            (cd /opt/homebrew/Cellar/bazel/*.*.*/libexec/bin && curl -fLO https://github.com/bazelbuild/bazel/releases/download/5.4.0/bazel-5.4.0-darwin-arm64 && chmod +x bazel-5.4.0-darwin-arm64)
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y
+            apt update && apt upgrade -y
+            apt install -y protobuf-compiler libprotobuf-dev
       - run:
           name: "build and test"
           command: |
@@ -95,4 +63,3 @@ workflows:
       not: << pipeline.parameters.GHA_Action >>
     jobs:
       - linux_ut
-      - macos_ut
