@@ -1,3 +1,5 @@
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/secretflow/authmanager/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/secretflow/authmanager/tree/main)
+
 # AuthManager
 
 AuthManager is a Authorization Management Service, which is designed to manage metadata of user data and authorization information. 
