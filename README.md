@@ -138,7 +138,7 @@ occlum build -f --sign-key <path_to/your_key.pem>
 occlum run /bin/auth-manager --config_path /host/config.yaml
 ```
 
-## Mutable Tls
+## Mutual Tls
 
 you must generate certificate if you want to use mtls feature of AuthManager
 
