@@ -2,7 +2,7 @@
 
 # AuthManager
 
-AuthManager is a Authorization Management Service, which is designed to manage metadata of user data and authorization information. 
+AuthManager is an Authorization Management Service, which is designed to manage metadata of user data and authorization information. 
 
 ## Features
 
