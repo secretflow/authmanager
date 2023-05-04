@@ -2,7 +2,7 @@
 
 # AuthManager
 
-AuthManager is a Authorization Management Service, which is designed to manage metadata of user data and authorization information. 
+AuthManager is an Authorization Management Service, which is designed to manage metadata of user data and authorization information. 
 
 ## Features
 
@@ -138,7 +138,7 @@ occlum build -f --sign-key <path_to/your_key.pem>
 occlum run /bin/auth-manager --config_path /host/config.yaml
 ```
 
-## Mutable Tls
+## Mutual Tls
 
 you must generate certificate if you want to use mtls feature of AuthManager
 
