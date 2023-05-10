@@ -128,7 +128,7 @@ pub(crate) fn runified_attestation_generate_auth_report(
             })?
             .to_string()
     };
-    info!("report_json len {}", buffer_len);
 
+    info!("report_json len {}", buffer_len);
     Ok(report_json)
 }
