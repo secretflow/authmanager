@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-port: 8835
+port: 8835   # port
 
 log_config:
-  log_file_name: /host/logs/auth_manager.log
-  monitor_log_file_name: /host/logs/monitor.log
-  log_level: debug
-  enable_console_logger: true
-  log_window_size: 1024
-  log_size_limit: 16
+  log_file_name: /host/logs/auth_manager.log   # log file path
+  monitor_log_file_name: /host/logs/monitor.log   # monitor log file path
+  log_level: info      # log level: info/debug/warn/error
+  enable_console_logger: true   # Whether the log can be printed in the terminal
+  log_window_size: 1024         # log window size
+  log_size_limit: 16            # log size limit
 
-remote_storage_client_config:
-  remote_storage_endpoint: localhost:8341
+remote_storage_client_config:   # remote storage service
+  remote_storage_endpoint: localhost:8341    
 
-scheme: "RSA"
-secret_shard_id: 0
-storage_backend: "inmemory"
-secret_key_from: "standalone"
-server_cert_path: "/host/resources/cert/server.crt"
-server_cert_key_path: "/host/resources/cert/server.key"
-client_ca_cert_path: "/host/resources/ca/my_ca.crt"
-enable_tls: true
+scheme: "RSA"                   # Asymmetric key generation method, SM2/RSA
+secret_shard_id: 0              # secret shared, can be ignored
+storage_backend: "inmemory"     # backend storage, inmemory/remote
+secret_key_from: "standalone"   # AuthManager's secret key source, standalone/cluster
+server_cert_path: "/host/resources/cert/server.crt"   # path for the Server Certificate
+server_cert_key_path: "/host/resources/cert/server.key"  # path for the Server Key
+client_ca_cert_path: "/host/resources/client_ca"   # directory for the Client CA Certificate
+enable_tls: true                # enable tls

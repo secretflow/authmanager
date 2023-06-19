@@ -12,78 +12,110 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fs;
+use clap::Parser;
+use merge::Merge;
+use serde::Deserialize;
+use std::{fs::File, io::BufReader};
 
-use clap::{App, Arg};
-use serde::{Deserialize, Serialize};
+#[derive(Parser)]
+pub struct LineArgs {
+    #[clap(long = "config_path", default_value = "/host/config.yaml")]
+    pub config_path: std::path::PathBuf,
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+    /// Rest of arguments
+    #[command(flatten)]
+    pub config: Config,
+}
+
+#[derive(Parser, Deserialize, Merge)]
 pub struct Config {
     /// listening port
-    pub port: u32,
+    #[clap(long)]
+    pub port: Option<u32>,
     /// log config
-    pub log_config: LogConfig,
+    #[command(flatten)]
+    pub log_config: Option<LogConfig>,
     /// remote storage client config
-    pub remote_storage_client_config: RemoteStorageClientConfig,
+    #[command(flatten)]
+    pub remote_storage_client_config: Option<RemoteStorageClientConfig>,
     /// key scheme: SM2, RSA
-    pub scheme: String,
+    #[clap(long)]
+    pub scheme: Option<String>,
     //  the secret shard ID this service handled
-    pub secret_shard_id: i32,
+    #[clap(long)]
+    pub secret_shard_id: Option<i32>,
     // the mod of authmanager
     pub mode: Option<String>,
     // the storage backend
-    pub storage_backend: String,
+    #[clap(long)]
+    pub storage_backend: Option<String>,
     // secret key pair from
-    pub secret_key_from: String,
+    #[clap(long)]
+    pub secret_key_from: Option<String>,
     // server cert path
-    pub server_cert_path: String,
+    #[clap(long, default_value = "/host/resources/cert/server.crt")]
+    pub server_cert_path: Option<String>,
     // server cert key path
-    pub server_cert_key_path: String,
+    #[clap(long, default_value = "/host/resources/cert/server.key")]
+    pub server_cert_key_path: Option<String>,
     // root ca cert path
-    pub client_ca_cert_path: String,
-    // enable mtls
-    pub enable_tls: bool,
+    #[clap(long, default_value = "/host/resources/client_ca/")]
+    pub client_ca_cert_path: Option<String>,
+    // Tls
+    #[clap(long)]
+    pub enable_tls: Option<bool>,
 }
 
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Parser, Deserialize, Merge)]
 pub struct LogConfig {
     /// log file name
-    pub log_file_name: String,
+    #[clap(long = "log_config.log_file_name")]
+    pub log_file_name: Option<String>,
     /// monitor log file name
-    pub monitor_log_file_name: String,
+    #[clap(long = "log_config.monitor_log_file_name")]
+    pub monitor_log_file_name: Option<String>,
     /// log level
-    pub log_level: String,
+    #[clap(long = "log_config.log_level")]
+    pub log_level: Option<String>,
     /// enable console logger
-    pub enable_console_logger: bool,
+    #[clap(long = "log_config.enable_console_logger")]
+    pub enable_console_logger: Option<bool>,
     /// log window size
-    pub log_window_size: u32,
+    #[clap(long = "log_config.log_window_size")]
+    pub log_window_size: Option<u32>,
     /// log size limit, MB
-    pub log_size_limit: u64,
+    #[clap(long = "log_config.log_size_limit")]
+    pub log_size_limit: Option<u64>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Parser, Deserialize, Merge)]
 pub struct RemoteStorageClientConfig {
     /// remote storage endpoint
-    pub remote_storage_endpoint: String,
+    #[clap(long = "remote_storage_client_config.remote_storage_endpoint")]
+    pub remote_storage_endpoint: Option<String>,
 }
 
 impl Config {
     pub fn new() -> Self {
         // Parse whole args with clap
-        let mut config_path = String::from("config.yaml");
-        let seapp = App::new("AuthManager").version("1.0").about("AuthManager");
-        let config_path_option = Arg::with_name("config_path")
-            .long("config_path")
-            .takes_value(true)
-            .help("config path")
-            .required(false);
-        let app = seapp.arg(config_path_option);
-        let matches = app.get_matches();
-        if let Some(parm) = matches.value_of("config_path") {
-            config_path = String::from(parm);
-        }
-        let yaml = fs::read_to_string(&config_path).unwrap();
-        let mut config: Config = serde_yaml::from_str(&yaml).unwrap();
+        let args = LineArgs::parse();
+
+        // Get config file
+        let mut config: Config = if let Ok(f) = File::open(&args.config_path) {
+            // Parse config with serde
+            match serde_yaml::from_reader::<_, Config>(BufReader::new(f)) {
+                // merge config already parsed from clap
+                Ok(config) => {
+                    let mut cfg = Config::from(args.config);
+                    cfg.merge(config);
+                    cfg
+                }
+                Err(err) => panic!("Error in configuration file:\n{}", err),
+            }
+        } else {
+            // If there is not config file return only config parsed from clap
+            Config::from(args.config)
+        };
         // set mode according to cfg
         if cfg!(feature = "production") {
             config.mode = Some("production".to_owned());

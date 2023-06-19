@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use log::{info, warn};
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
     vec,
 };
-
-use log::{info, warn};
 
 use std::iter::zip;
 
@@ -469,15 +468,6 @@ impl AuthManagerImpl {
             attribute1.bool_debug_disabled = "1".to_string();
             attribute1.hex_user_data = hex_report_data.clone();
 
-            // verify mrsigner and prod_id
-            // the field prod_id corresponds to product_id in configuration file Occlum.json
-            /*let mut attribute2 = UnifiedAttestationAttributes::default();
-            attribute2.str_tee_platform = "SGX_DCAP".to_string();
-            attribute2.hex_signer = allowed_app.hex_mrsigner.to_uppercase();
-            attribute2.hex_prod_id = allowed_app.hex_prod_id.to_uppercase();
-            attribute2.bool_debug_disabled = "1".to_string();
-            attribute2.hex_user_data = hex_report_data.clone();*/
-
             let policy = UnifiedAttestationPolicy {
                 pem_public_key: "".to_owned(),
                 main_attributes: vec![attribute1],
@@ -736,10 +726,10 @@ impl AuthManagerImpl {
             .await?;
 
         // sanity check
-        if resp.data_uri_with_dk.len() != req.partition_id_infos.len() {
+        if resp.data_uri_with_dk.len() >= req.partition_id_infos.len() {
             return_errno!(
                 AuthStatus::InternalErr,
-                "data_uri_with_dk.len {} should be equal to req.partition_id_infos.len {}.",
+                "data_uri_with_dk.len {} should be greater than req.partition_id_infos.len {}.",
                 resp.data_uri_with_dk.len(),
                 req.partition_id_infos.len()
             );

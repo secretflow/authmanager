@@ -17,7 +17,7 @@ prost = "0.11"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 log = "0.4"
 log4rs = "1.0.0"
-clap = { version = "3.2.20", features = ["derive"]}
+clap = { version = "4.2.7", features = ["derive"]}
 indoc = "1.0"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 reqwest-retry = "0.1.5"
@@ -34,3 +34,4 @@ sec1 = { version = "0.3.0", features = ["alloc", "pkcs8", "pem", "std"] }
 async-trait = "0.1.64"
 base64 = "0.21.0"
 hex = "0.4.3"
+merge = "0.1.0"
