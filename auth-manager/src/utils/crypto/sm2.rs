@@ -205,12 +205,12 @@ impl Encrypter for Sm2Encrypter {
     /// [`EVP_PKEY_encrypt`]: https://www.openssl.org/docs/manmaster/man3/EVP_PKEY_encrypt.html
     fn encrypt(&self, data: &[u8]) -> AuthResult<Vec<u8>> {
         unsafe {
-            let mut ciphertext_len: size_t = 0;
+            let mut ciphertext_len: usize = 0;
             // get length
             if EVP_PKEY_encrypt(
                 self.pctx,
                 ptr::null_mut(),
-                &mut ciphertext_len as *mut size_t,
+                &mut ciphertext_len as *mut usize,
                 data.as_ptr(),
                 data.len(),
             ) < 0
@@ -222,7 +222,7 @@ impl Encrypter for Sm2Encrypter {
             if EVP_PKEY_encrypt(
                 self.pctx,
                 cipher_text.as_mut_ptr(),
-                &mut ciphertext_len as *mut size_t,
+                &mut ciphertext_len as *mut usize,
                 data.as_ptr(),
                 data.len(),
             ) < 0
@@ -324,12 +324,12 @@ impl Decrypter for Sm2Decrypter {
     /// [`EVP_PKEY_decrypt`]: https://www.openssl.org/docs/manmaster/man3/EVP_PKEY_decrypt.html
     fn decrypt(&self, data: &[u8]) -> AuthResult<Vec<u8>> {
         unsafe {
-            let mut plaintext_len: size_t = 0;
+            let mut plaintext_len: usize = 0;
             // get length
             if EVP_PKEY_decrypt(
                 self.pctx,
                 ptr::null_mut(),
-                &mut plaintext_len as *mut size_t,
+                &mut plaintext_len as *mut usize,
                 data.as_ptr(),
                 data.len(),
             ) < 0
@@ -341,7 +341,7 @@ impl Decrypter for Sm2Decrypter {
             if EVP_PKEY_decrypt(
                 self.pctx,
                 plaintext.as_mut_ptr(),
-                &mut plaintext_len as *mut size_t,
+                &mut plaintext_len as *mut usize,
                 data.as_ptr(),
                 data.len(),
             ) < 0
