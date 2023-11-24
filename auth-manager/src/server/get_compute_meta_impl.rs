@@ -814,9 +814,7 @@ impl AuthManagerImpl {
                 data_uri_with_dks: Some(data_uri_ret),
             });
         }
-        // OPENSPURCE-CLEANUP REMOVE 2
-        debug!("input meta {:?}", input_metas);
-        debug!("input meta {:?}", resp.data_access_token);
+        
         let compute_meta: authmanager::ComputeMeta = ComputeMeta {
             cmd: "".to_owned(),
             // at present, access_token is None
