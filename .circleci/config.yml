@@ -50,6 +50,8 @@ jobs:
             git submodule init
             git submodule update --init --remote
             bash second_party/unified_attestation/compile.sh
+            cp second_party/unified_attestation/c/lib/* /usr/local/lib/
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
             cargo test
 
 # Invoke jobs via workflows
