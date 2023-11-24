@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-image=secretflow/authmanager-ubuntu-ci:0.1.0b
+image=secretflow/authmanager-dev-ubuntu:0.1.0b0
 DOCKER=docker
 project=authmanager
 if [[ $1 == 'enter' ]]; then

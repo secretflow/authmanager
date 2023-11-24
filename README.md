@@ -27,23 +27,8 @@ so how to generate dynamic link library?
 ```bash
 git clone xxx
 git submodule init
-git submodule update --init
-git submodule update --remote
+git submodule update --init --remote --recursive
 ```
-
-until now, we pull code from github to the directory "second_party/apis/" and "second_party/unified-attestation/"
-
-- get submodule in the directory "second_party/unified-attestation/"
-
-```bash
-cd second_party/unified-attestation/
-git submodule init
-git submodule update --init
-git submodule update --remote --recursive
-cd ../..
-```
-
-until now, we get all submodule in the AuthManager
 
 - compile source code to get the above two dynamic link librarys
 
@@ -52,15 +37,9 @@ until now, we get all submodule in the AuthManager
 bash sgx2-env
 # enter docker image
 bash sgx2-env enter
-cd second_party/unified-attestation/
-bazel build //:libgeneration.so
-bazel build //:libverification.so
-cd ../..
-# copy libgeneration.so libverification.so 
-cp second_party/unified-attestation/bazel-bin/libgeneration.so second_party/unified_attestation/c/lib/
-cp second_party/unified-attestation/bazel-bin/libverification.so second_party/unified_attestation/c/lib/
+# compile dynamic librarys
+bash second_party/unified_attestation/compile.sh
 ```
-
 
 ### Simulation Mode
 
@@ -68,14 +47,13 @@ Remote Attestation is not enabled for this mode
 
 ```bash
 # build exe and occlum
-MODE=SIM bash deployment/build.sh
+cargo build
 # 
-cd occlum_release
 # enable tls(often skip)
 # if you want to use the mtls, you can refer to the mtls part
 # run service
 # if the port is occupied, you can modify the field port in the config.yaml
-occlum run /bin/auth-manager --config_path /host/config.yaml
+LD_LIBRARY_PATH=/home/admin/dev/second_party/unified_attestation/c/lib/ target/debug/auth-manager --config_path=deployment/conf/config.yaml --enable-tls=false
 ```
 
 ### Production Mode(default mode)
@@ -96,7 +74,7 @@ modify image/etc/kubetee/unified_attestation.json ua_dcap_pccs_url
 # Generate a pair of public and private keys
 occlum build -f --sign-key <path_to/your_key.pem>
 # run service
-occlum run /bin/auth-manager --config_path /host/config.yaml
+occlum run /bin/auth-manager --config_path /host/config.yaml --enable-tls=false
 ```
 
 ## Run Quickly by Docker Image
@@ -115,7 +93,7 @@ cd occlum_release
 # enable tls(often skip)
 # if you want to use the mtls, you can refer to the mtls part
 # run service
-occlum run /bin/auth-manager --config_path /host/config.yaml
+occlum run /bin/auth-manager --config_path /host/config.yaml --enable-tls=false
 ```
 
 ### Production Mode Image
@@ -135,7 +113,7 @@ modify occlum_release/image/etc/kubetee/unified_attestation.json ua_dcap_pccs_ur
 # Generate a pair of public and private keys
 occlum build -f --sign-key <path_to/your_key.pem>
 # run service
-occlum run /bin/auth-manager --config_path /host/config.yaml
+occlum run /bin/auth-manager --config_path /host/config.yaml --enable-tls=false
 ```
 
 ## Mutual Tls

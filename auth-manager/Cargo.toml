@@ -12,26 +12,27 @@ production = []
 auth-manager-tonic = { path = "../auth-manager-tonic" }
 unified_attestation = { path = "../second_party/unified_attestation", features=["ua_gen"]}
 auth-types = { path = "../auth-types" }
-tonic = { version = "0.8", features = ["tls"] }
-prost = "0.11"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-log = "0.4"
-log4rs = "1.0.0"
-clap = { version = "4.2.7", features = ["derive"]}
-indoc = "1.0"
-reqwest = { version = "0.11", features = ["blocking", "json"] }
+tonic = { version = "0.8.3", features = ["tls"] }
+prost = "0.11.9"
+tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"] }
+log = "0.4.20"
+log4rs = "1.2.0"
+clap = { version = "3.2.25", features = ["derive"]}
+indoc = "1.0.9"
+reqwest = { version = "0.11.22", features = ["blocking", "json"] }
 reqwest-retry = "0.1.5"
 reqwest-middleware = "0.1.6"
-bytes = { version = "1", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.9"
-openssl-sys = "0.9"
-openssl = { version = "0.10", features = ["vendored"] }
-paste = "1.0"
-serde_json = "1.0"
+bytes = { version = "1.5.0", features = ["serde"] }
+serde = { version = "1.0.190", features = ["derive"] }
+serde_yaml = "0.9.27"
+openssl-sys = "0.9.93"
+openssl = { version = "0.10.57" }
+paste = "1.0.14"
+serde_json = "1.0.107"
 pkcs8 = { version = "0.9.0", features = ["alloc", "pem", "std"] }
 sec1 = { version = "0.3.0", features = ["alloc", "pkcs8", "pem", "std"] }
 async-trait = "0.1.64"
 base64 = "0.21.0"
 hex = "0.4.3"
 merge = "0.1.0"
+libc = "0.2.150"

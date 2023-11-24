@@ -109,10 +109,10 @@ fn init_log(log_config: &LogConfig) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse whole args with clap
     let cfg = config::Config::new();
-    let remote_storage_config = &cfg.remote_storage_client_config.unwrap();
+    let remote_storage_config = &cfg.remote_storage_client_config;
 
     // init log
-    init_log(&(LogConfig::from(cfg.log_config.unwrap())));
+    init_log(&(LogConfig::from(cfg.log_config)));
     info!(
         "remote endpoint {:?}",
         remote_storage_config.remote_storage_endpoint

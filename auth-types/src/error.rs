@@ -91,7 +91,7 @@ macro_rules! auth_assert_eq {
 macro_rules! auth_assert_ge {
     ($left:expr, $right:expr) => {{
         auth_assert!(
-            !($left >= $right),
+            ($left >= $right),
             "{} not large than {}",
             stringify!($left),
             stringify!($right)

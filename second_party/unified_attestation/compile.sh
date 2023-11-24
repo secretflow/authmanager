@@ -1,3 +1,4 @@
+#
 # Copyright 2023 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,12 +12,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+#!/bin/bash
 
-[submodule "second_party/apis"]
-	path = second_party/apis
-	url = https://github.com/secretflow/secure-data-capsule-apis.git
-	branch = main
-[submodule "second_party/unified-attestation"]
-	path = second_party/unified-attestation
-	url = https://github.com/secretflow/jinzhao-attest.git
-	branch = bazel_build
+workdir=$(cd $(dirname $0); pwd)
+CRTDIR=$(pwd)
+cd $workdir/../unified-attestation/
+git submodule init
+git submodule update --init
+git submodule update --remote --recursive
+bazelisk build //:libgeneration.so
+bazelisk build //:libverification.so
+cd ..
+if [ ! -d "unified_attestation/c/lib/" ]; then
+    mkdir -p unified_attestation/c/lib/
+fi
+cp unified-attestation/bazel-bin/libgeneration.so unified_attestation/c/lib/ -f
+cp unified-attestation/bazel-bin/libverification.so unified_attestation/c/lib/ -f
+cd $CRTDIR

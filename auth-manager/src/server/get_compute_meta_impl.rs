@@ -444,13 +444,14 @@ impl AuthManagerImpl {
         public_key: &PublicKey,
         task_info: &TeeTaskParams,
     ) -> AuthResult<()> {
+        info!("start to verify allowed_apps");
         if allowed_apps.is_empty() {
-            return Err(errno!(
-                AuthStatus::PermissionDenied,
-                "allowed_apps is empty, is unsecure"
-            ));
+            warn!("allowed_apps is empty, is unsecure");
+            return Ok(());
         }
+
         // RA report_data = SHA256( task_info || PEM(public_key))
+        // NOTE: incompatible
         let data = [&task_info.encode_to_vec(), public_key.public_key.as_bytes()]
             .join(SEPARATOR.as_bytes());
         let hex_report_data = encode_upper(sha256(&data));
@@ -560,23 +561,28 @@ impl AuthManagerImpl {
 
             // verify the function info
             info!(
-                "support funcs {:?} task func{:?}",
+                "support funcs: {:?}\n task func:{:?}",
                 &data_auth.extra_limits, code
             );
-            // if code is not empty, extra_limits must contain the function
-            if !code.is_empty() {
-                let extra_limits: ExtraLimits =
-                    match self.parse_extra_limits(data_auth.extra_limits.as_str()) {
-                        Err(_e) => continue,
-                        Ok(v) => v,
-                    };
-                for limit_func in extra_limits.limit_functions.iter() {
-                    if *limit_func == *code {
-                        return Ok(());
-                    }
-                }
-            } else {
+            // extra_limits is empty, means any code satisfies the auth info
+            if data_auth.extra_limits.is_empty() {
                 return Ok(());
+            }
+            let extra_limits: ExtraLimits = match self.parse_extra_limits(&data_auth.extra_limits) {
+                Err(_e) => {
+                    warn!("extra_limits err; {}", _e);
+                    continue;
+                }
+                Ok(v) => v,
+            };
+            // case `len(limit_functions) == 0` means any code satisfies the auth info
+            if extra_limits.limit_functions.len() == 0 {
+                return Ok(());
+            }
+            for limit_func in extra_limits.limit_functions.iter() {
+                if *limit_func == *code {
+                    return Ok(());
+                }
             }
         }
         return Err(errno!(
@@ -688,61 +694,52 @@ impl AuthManagerImpl {
 
         // step4: request task's input data keys
         let mut partition_id_infos = vec![];
-        let mut inputs_set = HashSet::new();
-        let mut inputs_data_uuid_set = HashSet::new();
-
         for input in task_info.inputs.iter() {
-            if !inputs_data_uuid_set.contains(&input.data_uuid) {
-                inputs_data_uuid_set.insert(input.data_uuid.clone());
-            }
-
-            if !inputs_set.contains(&(input.data_uuid.clone() + &input.partition_id)) {
-                inputs_set.insert(input.data_uuid.clone() + &input.partition_id);
-                partition_id_infos.push(PartitionIdInfo {
-                    data_uuid: input.data_uuid.clone(),
-                    partition_id: input.partition_id.clone(),
-                    partition_expr: "".to_owned(),
-                });
-            }
+            partition_id_infos.push(PartitionIdInfo {
+                data_uuid: input.data_uuid.clone(),
+                partition_id: input.partition_id.clone(),
+                partition_expr: input.partition_expr.clone(),
+            });
         }
+
+        info!("partition_id_infos size: {}", partition_id_infos.len());
 
         let req = GetPartitionAccessInfoRequest {
             header: Some(auth_manager_tonic::RequestHeader::default()),
-            partition_id_infos: partition_id_infos,
+            partition_id_infos,
         };
+
         let resp: GetDataAccessInfoResponse = self
             .storage_client
             .get_partition_access_info(req.clone())
             .await?;
 
-        let data_meta_req = GetDataMetaRequest {
-            header: Some(auth_manager_tonic::RequestHeader::default()),
-            data_uuid: inputs_data_uuid_set.into_iter().collect(),
-        };
-        info!("request data: {:?}", data_meta_req.data_uuid);
-        let data_meta_resp: GetDataMetaResponse = self
-            .storage_client
-            .get_data_meta(data_meta_req.clone())
-            .await?;
-
         // sanity check
-        if resp.data_uri_with_dk.len() >= req.partition_id_infos.len() {
+        if resp.data_uri_with_dk.len() != req.partition_id_infos.len() {
             return_errno!(
                 AuthStatus::InternalErr,
-                "data_uri_with_dk.len {} should be greater than req.partition_id_infos.len {}.",
+                "data_uri_with_dk.len {} should be equal to req.partition_id_infos.len {}.",
                 resp.data_uri_with_dk.len(),
                 req.partition_id_infos.len()
             );
         }
 
-        if data_meta_resp.data_meta.len() != data_meta_req.data_uuid.len() {
-            return_errno!(
-                AuthStatus::InternalErr,
-                "data_meta_req.data_uuid.len {} should be equal to data_meta_req.data_uuid {}.",
-                data_meta_resp.data_meta.len(),
-                data_meta_req.data_uuid.len()
-            );
-        }
+        let data_uuids: HashSet<String> = task_info
+            .inputs
+            .iter()
+            .map(|f| f.data_uuid.clone())
+            .collect::<HashSet<String>>();
+
+        let data_meta_req = GetDataMetaRequest {
+            header: Some(auth_manager_tonic::RequestHeader::default()),
+            data_uuid: data_uuids.into_iter().collect(),
+        };
+
+        info!("request data: {:?}", data_meta_req.data_uuid);
+        let data_meta_resp: GetDataMetaResponse = self
+            .storage_client
+            .get_data_meta(data_meta_req.clone())
+            .await?;
 
         let decrypter: Box<dyn Decrypter> = match self.scheme {
             // use private key from authmanager
@@ -766,75 +763,60 @@ impl AuthManagerImpl {
             }
         };
 
-        let mut inputs_hm = HashMap::new();
+        let mut input_metas: Vec<compute_meta::InputMeta> = vec![];
+        for (data_uri, input) in zip(resp.data_uri_with_dk, task_info.inputs) {
+            auth_assert_ge!(data_uri.part_data_uris.len(), 1);
+            auth_assert!(
+                data_uri.data_uuid == input.data_uuid,
+                "data uuid mismatch: {} vs {}",
+                data_uri.data_uuid,
+                input.data_uuid
+            );
 
-        for data_uri in resp.data_uri_with_dk.iter() {
-            auth_assert_eq!(data_uri.part_data_uris.len(), 1);
-            let part_data_uri = &data_uri.part_data_uris[0];
-            if !inputs_set.contains(&(data_uri.data_uuid.clone() + &part_data_uri.partition_id)) {
-                return_errno!(
-                    AuthStatus::InternalErr,
-                    "the task doesn't request this data, data_uuid: {}, partition_id: {}.",
-                    data_uri.data_uuid,
-                    part_data_uri.partition_id
-                );
-            }
-            if !inputs_hm.contains_key(&data_uri.data_uuid) {
-                let mut data_uri_ret = DataUri::default();
-                data_uri_ret.data_uuid = data_uri.data_uuid.clone();
-                inputs_hm.insert(data_uri.data_uuid.clone(), data_uri_ret);
-            }
-            let data_uri_ret = inputs_hm.get_mut(&data_uri.data_uuid).ok_or(errno!(
-                AuthStatus::OptionNoneErr,
-                "inputs_hm doesn't have this key {}.",
-                data_uri.data_uuid
-            ))?;
+            let mut data_uri_ret = DataUri::default();
+            data_uri_ret.data_uuid = data_uri.data_uuid.clone();
+            for partition_uri in data_uri.part_data_uris.iter() {
+                let mut part_data_uri_ret = PartitionDataUri::default();
+                part_data_uri_ret.partition_id = partition_uri.partition_id.clone();
+                // for each segment key
+                for seg_data_uri in partition_uri.seg_data_uris.iter() {
+                    let opt_seg = seg_data_uri
+                        .optional_seg
+                        .clone()
+                        .ok_or(errno!(AuthStatus::OptionNoneErr, "data key is empty."))?;
 
-            let mut part_data_uri_ret = PartitionDataUri::default();
-            part_data_uri_ret.partition_id = part_data_uri.partition_id.clone();
-
-            // for each segment key
-            for seg_data_uri in part_data_uri.seg_data_uris.iter() {
-                let opt_seg = seg_data_uri
-                    .optional_seg
-                    .clone()
-                    .ok_or(errno!(AuthStatus::OptionNoneErr, "data key is empty."))?;
-
-                let seg_key = match opt_seg {
-                    segment_data_uri::OptionalSeg::SegmentDataMeta(seg) => seg,
-                    _ => return_errno!(AuthStatus::InternalErr, "error seg type."),
-                };
-                if seg_key.secret_shard_id == self.secret_shard_id {
-                    // decrypt data key
-                    let data_key = decrypter.decrypt(&seg_key.encrypted_data_key)?;
-
-                    let segment_uri_ret = SegmentDataUri {
-                        segment_id: seg_key.segment_id,
-                        secret_shard_id: seg_key.secret_shard_id,
-                        mac: seg_key.mac.clone(),
-                        status: seg_data_uri.status.clone(),
-                        data_uri: seg_data_uri.data_uri.clone(),
-                        optional_seg: Some(segment_data_uri::OptionalSeg::DataKey(data_key)),
+                    let seg_key = match opt_seg {
+                        segment_data_uri::OptionalSeg::SegmentDataMeta(seg) => seg,
+                        _ => return_errno!(AuthStatus::InternalErr, "error seg type."),
                     };
-                    part_data_uri_ret.seg_data_uris.push(segment_uri_ret);
-                }
-            }
-            data_uri_ret.part_data_uris.push(part_data_uri_ret);
-        }
+                    if seg_key.secret_shard_id == self.secret_shard_id {
+                        // decrypt data key
+                        let data_key = decrypter.decrypt(&seg_key.encrypted_data_key)?;
 
-        let mut input_metas = HashMap::new();
-        for entry in inputs_hm.iter() {
-            let input_meta = compute_meta::InputMeta {
-                // at present, schema is None
-                schema: match get_schema(entry.0, &data_meta_resp.data_meta) {
+                        let segment_uri_ret = SegmentDataUri {
+                            segment_id: seg_key.segment_id,
+                            secret_shard_id: seg_key.secret_shard_id,
+                            mac: seg_key.mac.clone(),
+                            status: seg_data_uri.status.clone(),
+                            data_uri: seg_data_uri.data_uri.clone(),
+                            optional_seg: Some(segment_data_uri::OptionalSeg::DataKey(data_key)),
+                        };
+                        part_data_uri_ret.seg_data_uris.push(segment_uri_ret);
+                    }
+                }
+                data_uri_ret.part_data_uris.push(part_data_uri_ret);
+            }
+            input_metas.push(compute_meta::InputMeta {
+                schema: match get_schema(&data_uri.data_uuid, &data_meta_resp.data_meta) {
                     Ok(res) => res,
                     _ => None,
                 },
-                data_uri_with_dks: Some(entry.1.clone()),
-            };
-            input_metas.insert(entry.0.clone(), input_meta);
+                data_uri_with_dks: Some(data_uri_ret),
+            });
         }
-
+        // OPENSPURCE-CLEANUP REMOVE 2
+        debug!("input meta {:?}", input_metas);
+        debug!("input meta {:?}", resp.data_access_token);
         let compute_meta: authmanager::ComputeMeta = ComputeMeta {
             cmd: "".to_owned(),
             // at present, access_token is None
