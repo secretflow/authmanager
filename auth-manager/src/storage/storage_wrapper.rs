@@ -30,7 +30,7 @@ pub trait StorageWrapper: Send + Sync + Debug {
         &self,
         request: GetDataAccessInfoRequest,
     ) -> AuthResult<GetDataAccessInfoResponse>;
-    // get data info
+    // get partition data info
     async fn get_partition_access_info(
         &self,
         request: GetPartitionAccessInfoRequest,

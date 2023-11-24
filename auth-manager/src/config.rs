@@ -23,7 +23,7 @@ pub struct LineArgs {
     pub config_path: std::path::PathBuf,
 
     /// Rest of arguments
-    #[command(flatten)]
+    #[clap(flatten)]
     pub config: Config,
 }
 
@@ -33,11 +33,11 @@ pub struct Config {
     #[clap(long)]
     pub port: Option<u32>,
     /// log config
-    #[command(flatten)]
-    pub log_config: Option<LogConfig>,
+    #[clap(flatten)]
+    pub log_config: LogConfig,
     /// remote storage client config
-    #[command(flatten)]
-    pub remote_storage_client_config: Option<RemoteStorageClientConfig>,
+    #[clap(flatten)]
+    pub remote_storage_client_config: RemoteStorageClientConfig,
     /// key scheme: SM2, RSA
     #[clap(long)]
     pub scheme: Option<String>,
@@ -53,13 +53,13 @@ pub struct Config {
     #[clap(long)]
     pub secret_key_from: Option<String>,
     // server cert path
-    #[clap(long, default_value = "/host/resources/cert/server.crt")]
+    #[clap(long)]
     pub server_cert_path: Option<String>,
     // server cert key path
-    #[clap(long, default_value = "/host/resources/cert/server.key")]
+    #[clap(long)]
     pub server_cert_key_path: Option<String>,
     // root ca cert path
-    #[clap(long, default_value = "/host/resources/client_ca/")]
+    #[clap(long)]
     pub client_ca_cert_path: Option<String>,
     // Tls
     #[clap(long)]

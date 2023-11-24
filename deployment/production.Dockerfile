@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[submodule "second_party/apis"]
-	path = second_party/apis
-	url = https://github.com/secretflow/secure-data-capsule-apis.git
-	branch = main
-[submodule "second_party/unified-attestation"]
-	path = second_party/unified-attestation
-	url = https://github.com/secretflow/jinzhao-attest.git
-	branch = bazel_build
+FROM secretflow/authmanager-dev-ubuntu:0.1.0b0
+
+USER root
+
+COPY . /home/dev/
+env MODE SIM
+RUN cd /home/dev && bash deployment/build.sh
+RUN chown -R root:root /home/dev/occlum_release
+RUN cp -apr /home/dev/occlum_release/. /home/root
+
+EXPOSE 8835
+
+WORKDIR /home/root/

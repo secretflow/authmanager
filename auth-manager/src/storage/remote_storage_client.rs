@@ -14,7 +14,7 @@
 
 use super::storage_wrapper::StorageWrapper;
 use async_trait::async_trait;
-use auth_manager_tonic::sdc::dataagent::*;
+use auth_manager_tonic::{sdc::dataagent::*, Code};
 use auth_types::*;
 use bytes::Bytes;
 use reqwest::Url;
@@ -24,7 +24,7 @@ use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 const GET_DATA_META_PATH: &str = "/api/v1/data_meta/get";
 const GET_DATA_AUTH_PATH: &str = "/api/v1/data_auth/get";
 const GET_ACCESS_INFO_PATH: &str = "/api/v1/data_access_info/get";
-const GET_PARTITION_ACCESS_INFO_PATH: &str = "/api/v1/partition_data_access_info/get";
+const GET_PARTITION_ACCESS_INFO_PATH: &str = "/api/v1/db_proxy/partition_data_access_info/get";
 const GET_INS_PUBLIC_KEY_PATH: &str = "/api/v1/ins_pub_key/get";
 
 // remote storage implementation
@@ -49,18 +49,37 @@ impl Default for RemoteStorageClient {
     }
 }
 
+macro_rules! check_status {
+    ($request_url: expr, $response: expr) => {{
+        let status = $response.status.clone().ok_or_else(|| {
+            errno!(
+                AuthStatus::OptionNoneErr,
+                "request: {}, status is none",
+                $request_url
+            )
+        })?;
+        auth_assert!(
+            status.code == Code::Ok as i32,
+            "request: {}, err code: {}, err msg: {}",
+            $request_url,
+            status.code,
+            status.message
+        );
+    }};
+}
+
 #[async_trait]
 impl StorageWrapper for RemoteStorageClient {
     // get
     async fn get_data_meta(&self, request: GetDataMetaRequest) -> AuthResult<GetDataMetaResponse> {
         let response: GetDataMetaResponse = self.post_data(GET_DATA_META_PATH, request).await?;
-
+        check_status!(GET_DATA_META_PATH, response);
         Ok(response)
     }
 
     async fn get_data_auth(&self, request: GetDataAuthRequest) -> AuthResult<GetDataAuthResponse> {
         let response: GetDataAuthResponse = self.post_data(GET_DATA_AUTH_PATH, request).await?;
-
+        check_status!(GET_DATA_AUTH_PATH, response);
         Ok(response)
     }
 
@@ -70,7 +89,7 @@ impl StorageWrapper for RemoteStorageClient {
     ) -> AuthResult<GetDataAccessInfoResponse> {
         let response: GetDataAccessInfoResponse =
             self.post_data(GET_ACCESS_INFO_PATH, request).await?;
-
+        check_status!(GET_ACCESS_INFO_PATH, response);
         Ok(response)
     }
 
@@ -81,7 +100,7 @@ impl StorageWrapper for RemoteStorageClient {
         let response: GetDataAccessInfoResponse = self
             .post_data(GET_PARTITION_ACCESS_INFO_PATH, request)
             .await?;
-
+        check_status!(GET_PARTITION_ACCESS_INFO_PATH, response);
         Ok(response)
     }
 
@@ -91,7 +110,7 @@ impl StorageWrapper for RemoteStorageClient {
     ) -> AuthResult<GetInsPubKeyResponse> {
         let response: GetInsPubKeyResponse =
             self.post_data(GET_INS_PUBLIC_KEY_PATH, request).await?;
-
+        check_status!(GET_INS_PUBLIC_KEY_PATH, response);
         Ok(response)
     }
 
@@ -183,14 +202,31 @@ impl RemoteStorageClient {
             .body(buf)
             .send()
             .await
-            .map_err(|e| errno!(AuthStatus::InternalErr, "request remote data err: {:?}", e))?;
+            .map_err(|e| {
+                errno!(
+                    AuthStatus::InternalErr,
+                    "request remote data err: {:?}, url: {:?}",
+                    e,
+                    path
+                )
+            })?;
 
-        let res_body: Bytes = res
-            .bytes()
-            .await
-            .map_err(|e| errno!(AuthStatus::InternalErr, "pb parse error: {:?}", e))?;
+        let res_body: Bytes = res.bytes().await.map_err(|e| {
+            errno!(
+                AuthStatus::InternalErr,
+                "pb parse error: {:?}, url: {}",
+                e,
+                path
+            )
+        })?;
 
-        Ok(U::decode(res_body)
-            .map_err(|e| errno!(AuthStatus::InternalErr, "pb decode error: {:?}", e))?)
+        Ok(U::decode(res_body).map_err(|e| {
+            errno!(
+                AuthStatus::InternalErr,
+                "pb decode error: {:?}, url: {} ",
+                e,
+                path
+            )
+        })?)
     }
 }
